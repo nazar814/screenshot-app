@@ -3269,4 +3269,10 @@
    'PYMODULE'),
   ('zoneinfo._zoneinfo',
    'C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\zoneinfo\\_zoneinfo.py',
+   'PYMODULE'),
+  ('zstandard',
+   'C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\zstandard\\__init__.py',
+   'PYMODULE'),
+  ('zstandard.backend_cffi',
+   'C:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\zstandard\\backend_cffi.py',
    'PYMODULE')])
